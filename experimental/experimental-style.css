@@ -1,0 +1,127 @@
+body {
+  font: 0.74em sans-serif;
+  background-color: white;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.countline {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2.5px;
+}
+
+.mainline {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2.5px;
+}
+
+.subline{
+    fill: none;
+    stroke: grey;
+    stroke-width: 1px;
+}
+
+.area {
+  fill: lightgrey;
+}
+
+#wrap {
+	width: 1060px;
+	height: 100%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#inputcontainer {
+	width: 200px;
+	float: right;
+	height: 100%;
+	padding: 10px;
+/*	padding: 20px;
+*/}
+
+#svgcontainer {
+	background-color: white;
+	margin-right: 230px;
+	margin-top: 10px;
+	height: 100%;
+}
+
+#slider-range {
+	width: 150px;
+	margin-top: 5px;
+	margin-left: 2px;
+}
+
+#radiocontainer {
+	margin-top: auto;
+}
+
+.dropzone {
+	margin-top: 8px;
+	height: auto;
+	min-height: 20px;
+}
+
+.listhead {
+	margin-left: 0;
+	margin-right: 0;
+	padding: 3px 2px;
+	color: white;
+	background-color: lightgrey; 
+	font-weight: bold;	
+	pointer-events: none;
+}
+
+.minimize {
+	float: right;
+	margin-right: 3px;
+	pointer-events: auto;
+	cursor: pointer;
+}
+
+.close {
+	float: right;
+	margin-right: 3px;
+	pointer-events: auto;
+	cursor: pointer;
+}
+
+
+
+#newcontainer {
+	margin-top: 8px;
+	height: auto;
+}
+
+#makenew {
+	margin-left: 0;
+	margin-right: 0;
+	padding: 3px 2px;
+	color: white;
+	font-weight: bold;
+	background-color: lightgrey;
+	cursor: pointer;
+}
+
+#makenew:hover {
+	background-color: darkgrey;
+}
+
+#graphs {
+	width: 100%;
+}
+
+.areacontainer {
+	padding-left: 2px;
+}

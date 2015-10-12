@@ -1,0 +1,688 @@
+<!DOCTYPE html> 
+<meta charset="utf-8">
+<html>
+<head>
+<title>Leiepriser i Oslo</title>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+<script src="//code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+<link rel="stylesheet" type="text/css" href="experimental-style.css">
+
+</head>
+<body>
+<div id="wrap">
+	
+<div id="inputcontainer">
+	
+	
+<div id="minisvgcontainer"></div>
+
+<div id="radiocontainer">	
+<input type="radio" name="type" value="h" id="hybel">Hybler 
+<input type="radio" name="type" value="r" id="rom">Rom 
+<input type="radio" name="type" value="all" id="alle">Alle<br>
+</div>
+	
+	
+
+
+<div id="graphs">
+	
+<div class="dropzone" name="graf_1"><div class="listhead">Graf 1 <span class="close">×</span><span class="minimize">_</span></div>
+<div class="areacontainer"></div>
+
+
+</div>
+
+<div class="dropzone" name="graf_2">
+<div class="listhead">Graf 2<span class="close">×</span><span class="minimize">_</span></div>
+<div class="areacontainer"></div>
+</div>
+
+</div>
+
+<div id="newcontainer"><div id="makenew">Legg til</div></div>
+
+<div class="dropzone" name="ubrukte">
+<div class="listhead">Områder</div>
+<div class="areacontainer"></div>
+</div>
+
+	
+<span id="highlightedarea"></span>
+
+</div>
+
+
+
+<div id="svgcontainer"></div>
+</div>
+
+<script type="text/javascript">
+
+
+var j = 3;
+
+var used_names = [];
+
+
+function add_draggable(area, to_zone) {
+	var drag_element = "<div id='draggable' draggable='true' ondragstart='event.dataTransfer.setData('text/plain',null)' name='" + area + "' class='dragarea'>" + areas_long[area] + "</div>";
+	$("div[name=" + to_zone + "] > .areacontainer").append(drag_element);
+}
+
+// Draggable
+
+var areas_short = {'St. Hanshaugen - Ullevål': 'su',  'Bygdøy - Frogner': 'bf', 'Uranienborg - Majorstuen': 'um', 'Grünerløkka - Sofienberg': 'gs', 'Gamle Oslo': 'go', 'Sagene - Torshov': 'st', 'Vinderen': 'vinderen', 'Ekeberg - Bekkelaget': 'eb', 'Ullern': 'ullern', 'Bjerke': 'bjerke', 'Grefsen - Kjelsås': 'gk', 'Røa': 'roa', 'Søndre Nordstrand': 'sn', 'Helsfyr - Sinsen': 'hs', 'Sogn': 'sogn', 'Nordstrand': 'nordstrand', 'Sentrum': 'sentrum', 'Grorud': 'grorud', 'Hellerud': 'hellerud', 'Furuset': 'furuset', 'Stovner': 'stovner', 'Romsås': 'romsas', 'Lambertseter': 'lambertseter', 'Bøler': 'boler', 'Manglerud': 'manglerud', 'Østensjø': 'ostensjo'};
+
+
+var areas_long = {};
+
+var whats_where = { 'graf_1': ['su', 'ullern'], 'graf_2': ['um'], 'ubrukte': [] };
+
+for (key in areas_short) {
+	if(areas_short.hasOwnProperty(key)) { 
+		areas_long[areas_short[key]] = key;
+				
+		if( (whats_where['graf_1'].indexOf(areas_short[key]) == -1) && (whats_where['graf_2'].indexOf(areas_short[key]) == -1) ) {
+			whats_where['ubrukte'].push(areas_short[key]);
+		}
+		
+	}
+}
+
+
+for (key in whats_where) {
+	if(whats_where.hasOwnProperty(key)) {
+		for (var i = 0; i < whats_where[key].length; i++) {
+			var area = whats_where[key][i]; 
+
+			add_draggable(area, key);
+		}
+
+	}
+}
+
+
+
+
+// Code for dragging
+
+var dragged, dragged_old_zone, dragged_from;
+
+var minimized = [];
+
+var dragging = 0;
+
+  /* events fired on the draggable target */
+  document.addEventListener("drag", function( event ) {
+
+  }, false);
+
+  document.addEventListener("dragstart", function( event ) {
+	  
+      // store a ref. on the dragged elem
+      dragged = event.target;
+	  
+	  dragged_from = event.target.parentNode.parentNode;
+	  dragged_old_zone = dragged_from.getAttribute("name");
+	  	  
+      // make it half transparent
+      event.target.style.opacity = .5;
+  }, false);
+
+  document.addEventListener("dragend", function( event ) {
+      event.target.style.opacity = "";
+	  
+	  
+  }, false);
+
+  /* events fired on the drop targets */
+  document.addEventListener("dragover", function( event ) {
+      if ( event.target.className == "dropzone" ) {
+		  drop_zone = event.target;
+      } else if( event.target.className == "dragarea") {
+		  drop_zone = event.target.parentNode.parentNode;
+      } else if ( event.target.className == "areacontainer" ) {
+		  drop_zone = event.target.parentNode;
+      }
+	  
+	  // drop_zone.classList.add("dnd-hover");
+
+	  event.stopPropagation();
+      event.preventDefault();
+	  
+  }, false);
+
+  document.addEventListener("dragenter", function( event ) {
+      // highlight potential drop target when the draggable element enters it
+	  
+	  dragging++;
+	  
+      if ( event.target.className == "dropzone" ) {
+		  event.target.style.border = "1px solid";
+		  // event.target.classList.add('dnd-hover');
+      } else if( event.target.className == "dragarea") {
+		  event.target.parentNode.parentNode.style.border = "1px solid";
+		  // event.target.parentNode.parentNode.classList.add('dnd-hover');
+      } else if ( event.target.className == "areacontainer" ) {
+		  event.target.parentNode.style.border = "1 px solid";
+		  // event.target.parentNode.classList.add('dnd-hover');
+      }
+	  
+	  console.log(dragging);
+	  
+	  event.stopPropagation();
+	  event.preventDefault();
+	 
+
+  }, false);
+
+  document.addEventListener("dragleave", function( event ) {
+      // reset background of potential drop target when the draggable element leaves it
+	  
+	  dragging--;
+      if ( event.target.className == "dropzone" ) {
+		  drop_zone = event.target;
+      } else if( event.target.className == "dragarea") {
+		  drop_zone = event.target.parentNode.parentNode;
+      } else if ( event.target.className == "areacontainer" ) {
+		  drop_zone = event.target.parentNode;
+      } else {
+		  drop_zone.style.border = "none";
+      }
+	  
+	  console.log(dragging);
+	  if( dragging === 0 ) {
+		  // drop_zone.classList.remove('dnd-hover');
+	  }
+	  	  
+	  event.stopPropagation();
+	  event.preventDefault();
+	  
+
+
+  }, false);
+
+  document.addEventListener("drop", function( event ) {
+      // prevent default action (open as link for some elements)
+      event.preventDefault();
+      // move dragged elem to the selected drop target
+	  
+      if ( event.target.className == "dropzone" ) {
+          zone = event.target; 
+		  
+      } else if ( event.target.className == "dragarea") {
+      	  zone = event.target.parentNode.parentNode;
+		  
+      } else if ( event.target.className == "areacontainer" ) {
+		  zone = event.target.parentNode;
+      }
+	  
+	  if(event.target.className == "dropzone" || event.target.className == "dragarea" || event.target.className == "areacontainer" ) {
+          zone.style.border = "none";
+          dragged.parentNode.removeChild( dragged );
+          zone.querySelector(".areacontainer").appendChild( dragged );
+		  
+		  
+		  dragged_to = zone.getAttribute("name");
+		  
+		  moved_area = dragged.getAttribute("name");
+		  
+		  whats_where[ dragged_to ].push( moved_area );
+		  
+		  var index = whats_where[ dragged_old_zone ].indexOf( moved_area );
+		  whats_where[ dragged_old_zone ].splice(index, 1);
+		  		  
+		  update_graph();
+		  
+		  if(dragged_to !== "ubrukte") {
+			  zone.querySelector(".listhead").style.background = color(dragged_to);
+		  }
+		  
+		  dragged_from.style.border = "none";
+	  }
+	  
+	  
+    
+  }, false);
+
+
+
+
+// Visualization
+
+function toggle(source) {
+	var checkboxes = document.getElementsByName('areas');
+	for(var i=0; i<checkboxes.length; i++) {
+		checkboxes[i].checked = source.checked;
+	}
+}
+
+$('.areas').prop('checked', true);
+$('#toggled').prop('checked', true);
+
+stat_mode = "a";
+
+$("#rom, #hybel, #alle").change(function() {
+	 if($('#rom').is(':checked')) {
+		 stat_mode = "r";
+	 } else if($("#hybel").is(":checked")) {
+		 stat_mode = "h";
+	 } else if($("#alle").is(":checked")) {
+		 stat_mode = "a";
+	 }
+	update_graph();
+});
+
+$(function() {
+  $('#slider-range').slider({
+    range: true,
+    min: 0,
+    max: 50,
+    values: [ 0, 50 ],
+    slide: function( event, ui ) {
+      $('#amount').html(ui.values[ 0 ] + " kvm" + " - " + ui.values[ 1 ] + " kvm");
+  }
+  });
+ 
+ });
+ 
+ $('#alle').prop("checked", true);
+ 
+ var areas = [];
+ 
+ $(':checkbox:checked').each(function(i){
+ 	areas[i] = $(this).val();	
+ });
+
+var transitiontime = 500;
+
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 850 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+	
+var newheight = 140;
+
+var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+var svg = d3.select("#svgcontainer").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  	.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0])
+	.domain([0, 9000]);
+
+var newy = d3.scale.linear()
+	.range([newheight, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var newxAxis = d3.svg.axis()
+	.scale(x)
+    .orient("bottom");
+
+var newyAxis = d3.svg.axis()
+	.scale(newy)
+	.orient("left");	
+
+var line = d3.svg.line()
+.	defined(function(d) { return d.price != null; })
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.price); });
+	
+var linetwo = d3.svg.area()
+	.defined(line.defined())
+    .x(function(d) { return x(d.date); })
+    .y0(function(d) { return y(d.price) + strokeWidth(d.count)/2; })
+	.y1(function(d) { return y(d.price) - strokeWidth(d.count)/2; });
+
+	
+var tooltip = d3.select("#main")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("opacity", "0")
+	.text("");
+	
+var color = d3.scale.category10();
+
+var strokeWidth = d3.scale.linear()
+	.range([1, 12])
+	.domain([1,60]);
+	
+	
+
+var minisvg = d3.select("#minisvgcontainer").append("svg")
+    .attr("width", 180)
+    .attr("height", 30)
+  	.append("g")
+    .attr("transform", "translate(10,10)");
+
+
+make_graph();
+
+
+function make_graph() {
+	
+// No area specification since first time.
+
+var url = "diy-getdata.php?type=" + stat_mode;
+
+for (key in whats_where) {
+	if(whats_where.hasOwnProperty(key) && key !== "ubrukte") {
+		if (whats_where[key].length > 0) {
+			url = url + "&" + key + "=" + whats_where[key].join("-");
+			if(used_names.indexOf(key) < 0) {
+				used_names.push(key);
+			}
+		}
+	}
+}
+
+
+d3.json(url, function(error, data) {
+	
+    color.domain(used_names);
+	
+	
+	data.forEach(function(d) {
+		d.date = parseDate(d.date);
+	});
+	
+
+ x.domain(d3.extent(data, function(d) { return d.date; }));
+ 
+var areas = color.domain().map(function(name) {
+   return {
+     name: name,
+     values: data.map(function(d) {
+		 if(d[name] !== undefined) {
+	         return {date: d.date, price: +d[name]['avg_price'], count: +d[name]['count']};
+		 }
+		 else {
+			 return {date: undefined, price: undefined, count: undefined};
+		 }
+     })
+   };
+ });
+ 
+
+svg.selectAll("line.horizontalGrid").data(y.ticks(9)).enter()
+  .append("line")
+      .attr(
+      {
+          "class": "horizontalGrid",
+          "x1" : 0,
+          "x2" : width,
+          "y1" : function(d){ return y(d);},
+          "y2" : function(d){ return y(d);},
+          "fill" : "none",
+          "shape-rendering" : "crispEdges",
+          "stroke" : "lightgrey",
+          "stroke-width" : "1px"
+      });
+  
+svg.append("g")
+	.attr("class", "x axis")
+	.attr("transform", "translate(0," + height + ")")
+	.call(xAxis);
+
+svg.append("g")
+	.attr("class", "y axis")
+	.call(yAxis)
+    .append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("y", 6)
+	.attr("dy", ".71em")
+	.style("text-anchor", "end")
+	.text("Pris (kr)");
+	
+var xpos = 0;
+var ypos = 10; 
+	
+minisvg.append("line")
+	.attr({
+		"class": "scaleline",
+		"x1": xpos - 3,
+		"y1": ypos,
+		"x2": xpos,
+		"y2": ypos,
+		"stroke" : "#888888"
+});
+
+	
+minisvg.append("line")
+	.attr({
+		"class": "scaleline",
+		"x1": xpos,
+		"y1": ypos,
+		"x2": xpos,
+		"y2": ypos - strokeWidth(50),
+		"stroke" : "#888888"
+});
+
+	
+minisvg.append("line")
+	.attr({
+		"class": "scaleline",
+		"x1": xpos,
+		"y1": ypos - strokeWidth(50),
+		"x2": xpos - 3,
+		"y2": ypos - strokeWidth(50),
+		"stroke" : "#888888"
+});
+
+minisvg.append("text").attr("transform", "translate(5," + (ypos - 1) + ")").text("50 leiligheter");
+
+
+var area = svg.selectAll(".osloarea")
+	.data(areas, function(d) { return d.name })
+	.enter()
+	.append("g")
+	.attr("class", "osloarea");
+	
+area.append("path")
+	.attr("class", "area")
+	.attr("id", function(d) { return d.name; })
+	.attr("d", function(d) { return linetwo(d.values); })
+	.style("fill", function(d) { return color(d.name); })
+	.on("mouseover", function(d) {
+		this.parentNode.parentNode.appendChild(this.parentNode);
+	})
+	.on("mouseout", function(d) {
+
+	});
+
+
+	$(".listhead").css("background-color", function() {
+		var parent_zone = $(this).parent().attr("name");
+		if(parent_zone != "ubrukte") {
+			return color(parent_zone);
+		}
+		else {
+			return "lightgrey";
+		}
+	});
+
+});
+
+
+
+}
+
+function update_graph() {
+
+var url = "diy-getdata.php?type=" + stat_mode;
+
+for (key in whats_where) {
+	if(whats_where.hasOwnProperty(key) && key !== "ubrukte") {
+		if (whats_where[key].length > 0) {
+			url = url + "&" + key + "=" + whats_where[key].join("-");
+			if(used_names.indexOf(key) < 0) {
+				used_names.push(key);
+			}
+		}
+	}
+}
+	
+d3.json(url, function(error, data) {
+	
+	color.domain(used_names);
+
+	data.forEach(function(d) {
+		d.date = parseDate(d.date);
+	});
+	 
+var areas = color.domain().map(function(name) {
+	if(minimized.indexOf(name) < -1) {
+	} else {
+	    return {
+	      name: name,
+	      values: data.map(function(d) {
+	 		 if(d[name] !== undefined) {
+	 	         return {date: d.date, price: +d[name]['avg_price'], count: +d[name]['count']};
+	 		 }
+	 		 else {
+	 			 return {date: undefined, price: undefined, count: undefined};
+	 		 }
+	      })
+	    };
+	}
+
+ });
+ 
+var area = svg.selectAll(".area")
+ 	.data(areas, function(d) { return d.name });
+	 
+area.exit().remove();
+
+area.enter()
+	.append("g")
+	.attr("class", "osloarea")
+	.append("path")
+	.attr("class", "area")
+	.attr("id", function(d) { return d.name; })
+	.attr("d", function(d) { return linetwo(d.values); })
+	.style("fill", function(d) { return color(d.name); })
+	.on("mouseover", function(d) {
+		this.parentNode.parentNode.appendChild(this.parentNode);
+
+	})
+	.on("mouseout", function(d) {
+		
+	 });
+	
+	
+svg.selectAll(".area")
+	 .data(areas, function(d) { return d.name })
+	 .transition()
+	 .duration(600)
+	 .attr("d", function(d) { return linetwo(d.values); })
+	 .style("fill", function(d) { 
+		 return color(d.name); });
+
+});
+
+
+}
+
+function minimize_area(zone) {
+	new_opacity = svg.select("#" + zone).attr("opacity") == "0.0" ? "1.0" : "0.0";
+	svg.select("#" + zone).attr("opacity", new_opacity);
+	
+	
+	
+	new_display = $("div[name=" + zone + "] > .areacontainer").css("display") == "none" ? "" : "none";
+	new_color = new_display == "none" ? "lightgrey" : color(zone);
+	new_icon = new_display == "none" ? "☐" : "_ ";
+	
+	
+	
+	
+	$("div[name=" + zone + "] > .areacontainer").css("display", new_display);
+	$("div[name=" + zone + "] > .listhead").css("background-color", new_color);
+	$("div[name=" + zone + "] > .listhead > .minimize").html(new_icon);
+}
+
+function close_area(parent_zone) {	
+	
+	for(var i=0; i<whats_where[parent_zone].length; i++) {
+		whats_where['ubrukte'].push(whats_where[parent_zone][i]);
+		add_draggable(whats_where[parent_zone][i], 'ubrukte');
+	}
+	
+	delete whats_where[parent_zone];
+	
+	$("div[name=" + parent_zone + "]").remove();
+	
+	update_graph();
+}
+
+$(".close").click(function() {
+	var parent_zone = $(this).parent().parent().attr("name");
+	close_area(parent_zone);
+});
+
+$(".minimize").click(function() {
+	var parent_zone = $(this).parent().parent().attr("name");
+	
+	minimize_area(parent_zone);
+});
+
+
+$("#makenew").click(function() {	
+	var new_div = "<div class='dropzone' name='graf_" + j.toString() + "'><div class='listhead'>Graf " + j.toString() + "</div><div class='areacontainer'></div></div>";
+	
+	$("#graphs").append(new_div);
+
+	$("div[name=graf_" + j.toString() + "] > .listhead").append(function() {
+		return $("<span class='close'>×</span>").click(function() {
+			var parent_zone = $(this).parent().parent().attr("name");
+			
+			close_area(parent_zone);
+		});
+	});
+	
+	$("div[name=graf_" + j.toString() + "] > .listhead").append(function() {
+		return $("<span class='minimize'>_</span>").click(function() {
+			var parent_zone = $(this).parent().parent().attr("name");
+						
+			minimize_area(parent_zone);
+		});
+	});
+
+	
+	whats_where['graf_' + j.toString()] = [];
+	
+	j = j+1;
+	
+});
+
+
+if( navigator.userAgent.indexOf('AppleWebKit') === -1) {
+	$("body").html("Beklager, denne visualiseringen virker kun med webkit-nettlesere.")
+}
+
+
+</script>
+
+</body>
+</html>
