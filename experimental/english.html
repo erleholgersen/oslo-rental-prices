@@ -406,6 +406,8 @@ d3.json(url, function(error, data) {
 	data.forEach(function(d) {
 		d.date = parseDate(d.date);
 	});
+
+	console.log(data);
 	
 
  x.domain(d3.extent(data, function(d) { return d.date; }));
@@ -453,7 +455,7 @@ svg.append("g")
 	.attr("y", 6)
 	.attr("dy", ".71em")
 	.style("text-anchor", "end")
-	.text("Pris (kr)");
+	.text("Rent/month (NOK)");
 	
 var xpos = 0;
 var ypos = 10; 

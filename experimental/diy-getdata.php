@@ -64,7 +64,7 @@ foreach($places as $p) {
 
 // Get dates
 
-$query = "SELECT DISTINCT date FROM rawdata WHERE DATEDIFF(curdate(), date) <= 365;";
+$query = "SELECT DISTINCT date FROM rawdata;";
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
@@ -81,7 +81,7 @@ mysql_free_result($result);
 foreach($_GET as $key => $value) {
 	if(strpos($key, "graf_") === 0) {
 				
-		$query = "SELECT date, AVG(price) AS avg_price, AVG(sqm) AS avg_sqm, COUNT(*) AS count FROM rawdata WHERE DATEDIFF(curdate(), date) <= 365 AND (probable=1)"; 
+		$query = "SELECT date, AVG(price) AS avg_price, AVG(sqm) AS avg_sqm, COUNT(*) AS count FROM rawdata WHERE (probable=1)"; 
 
 		if( isset( $_GET["type"] ) ) {
 			if($_GET["type"] == "h") {
